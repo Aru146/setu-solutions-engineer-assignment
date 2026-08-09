@@ -27,9 +27,8 @@ Lightweight, production-grade backend service built with Python, FastAPI, and Po
 - [16. Running the Test Suite](#16-running-the-test-suite)
 - [17. Postman Collection](#17-postman-collection)
 - [18. Deployment](#18-deployment)
-- [19. AI Tool Disclosure](#19-ai-tool-disclosure)
-- [20. Assumptions](#20-assumptions)
-- [21. Future Improvements](#21-future-improvements)
+- [19. Assumptions](#19-assumptions)
+- [20. Future Improvements](#20-future-improvements)
 
 ---
 
@@ -711,19 +710,7 @@ fly ssh console -C "python -m scripts.seed"
 
 For Render, use the Shell tab in the service dashboard and run `python -m scripts.seed`.
 
----
-
-## 19. AI Tool Disclosure
-
-Per the assignment's disclosure requirement:
-
-- **Tool used**: Claude (Anthropic), sparingly, for boilerplate scaffolding (e.g. Alembic migration templates), docstring polish, and README formatting.
-- **What I authored**: schema design, index strategy, idempotency mechanism, out-of-order event handling, discrepancy rules, service-layer logic, and all business decisions.
-- **Review**: every generated line was read and edited before commit; anything that didn't match the design was rewritten or discarded.
-
----
-
-## 20. Assumptions
+## 19. Assumptions
 
 1. **Currency**: Payments default to `'INR'` unless explicitly specified.
 2. **Amounts**: Currency amounts are positive decimal numbers stored with 2 decimal places (`NUMERIC(12, 2)`).
@@ -734,7 +721,7 @@ Per the assignment's disclosure requirement:
 
 ---
 
-## 21. Future Improvements
+## 20. Future Improvements
 
 1. **Async Database Driver**: Migrate SQLAlchemy sessions to `asyncpg` for high-throughput async DB queries.
 2. **Keyset (Cursor-based) Pagination**: Cursor pagination for faster deep pagination on ultra-large datasets.
