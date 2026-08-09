@@ -2,6 +2,10 @@
 
 Lightweight, production-grade backend service built with Python, FastAPI, and PostgreSQL. It ingests asynchronous payment lifecycle events, tracks transaction states, computes merchant-level reconciliation metrics, and identifies reconciliation discrepancies.
 
+🚀 **Live Service URL**: [https://setu-solutions-engineer-assignment-1.onrender.com/](https://setu-solutions-engineer-assignment-1.onrender.com/)  
+📖 **Interactive API Docs (Swagger UI)**: [https://setu-solutions-engineer-assignment-1.onrender.com/docs](https://setu-solutions-engineer-assignment-1.onrender.com/docs)  
+💚 **Health Check**: [https://setu-solutions-engineer-assignment-1.onrender.com/health](https://setu-solutions-engineer-assignment-1.onrender.com/health)
+
 ---
 
 ## Table of Contents
@@ -690,8 +694,14 @@ fly deploy
 
 ### Option B — Render (`render.yaml` Blueprint)
 
-1. Push this repo to your own GitHub account.
-2. In Render, click **New +** → **Blueprint** and point it at your fork.
+The active production deployment is hosted on Render:
+- **Base URL**: `https://setu-solutions-engineer-assignment-1.onrender.com/`
+- **Swagger Docs**: `https://setu-solutions-engineer-assignment-1.onrender.com/docs`
+- **Health Check**: `https://setu-solutions-engineer-assignment-1.onrender.com/health`
+
+**Deployment Steps**:
+1. Push this repo to your GitHub account.
+2. In Render, click **New +** → **Blueprint** and point it at your repository.
 3. Render detects `render.yaml`, provisions the managed Postgres, and wires `DATABASE_URL` into the web service automatically.
 4. Click **Apply**.
 
