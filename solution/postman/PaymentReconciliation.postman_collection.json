@@ -1,0 +1,359 @@
+{
+  "info": {
+    "name": "Payment Reconciliation Service",
+    "description": "Postman collection covering every endpoint of the Setu Payment Reconciliation Service. Set the `baseUrl` collection variable to your local (http://localhost:8000) or deployed URL. All request bodies use real UUIDs so you can safely re-run any request — event ingestion is idempotent.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string",
+      "description": "Base URL of the service. Override with your deployed URL, e.g. https://payment-recon.fly.dev"
+    },
+    {
+      "key": "merchantId",
+      "value": "merchant_1",
+      "type": "string",
+      "description": "Merchant identifier used across list/filter examples"
+    },
+    {
+      "key": "sampleTransactionId",
+      "value": "02d878de-f807-4bf1-9b16-7098be6e54fe",
+      "type": "string",
+      "description": "Transaction UUID from the seed data — use after running scripts/seed.py"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Liveness probe. Returns `{ \"status\": \"healthy\" }`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "POST /events (happy path — payment_initiated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"11111111-1111-4111-8111-111111111111\",\n  \"event_type\": \"payment_initiated\",\n  \"transaction_id\": \"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\n  \"merchant_id\": \"merchant_demo\",\n  \"merchant_name\": \"Demo Corp\",\n  \"amount\": 1500.00,\n  \"currency\": \"INR\",\n  \"timestamp\": \"2026-01-10T10:00:00+00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Ingest a fresh payment_initiated event. First call returns 201 Created; subsequent identical calls return 200 OK (idempotent)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /events (idempotency — replay same event)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"11111111-1111-4111-8111-111111111111\",\n  \"event_type\": \"payment_initiated\",\n  \"transaction_id\": \"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\n  \"merchant_id\": \"merchant_demo\",\n  \"merchant_name\": \"Demo Corp\",\n  \"amount\": 1500.00,\n  \"currency\": \"INR\",\n  \"timestamp\": \"2026-01-10T10:00:00+00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Re-submit the same event_id. Expected: 200 OK with `\"message\": \"Event already ingested\"` and the original event/transaction snapshot."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /events (advance to payment_processed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"22222222-2222-4222-8222-222222222222\",\n  \"event_type\": \"payment_processed\",\n  \"transaction_id\": \"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\n  \"merchant_id\": \"merchant_demo\",\n  \"merchant_name\": \"Demo Corp\",\n  \"amount\": 1500.00,\n  \"currency\": \"INR\",\n  \"timestamp\": \"2026-01-10T10:05:00+00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Add a payment_processed event for the transaction from the previous request. current_status advances to payment_processed."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /events (settled)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"33333333-3333-4333-8333-333333333333\",\n  \"event_type\": \"settled\",\n  \"transaction_id\": \"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\n  \"merchant_id\": \"merchant_demo\",\n  \"merchant_name\": \"Demo Corp\",\n  \"amount\": 1500.00,\n  \"currency\": \"INR\",\n  \"timestamp\": \"2026-01-10T10:10:00+00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Complete the happy-path lifecycle by settling the transaction."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /events (validation error — invalid event_type)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"99999999-9999-4999-8999-999999999999\",\n  \"event_type\": \"nonsense\",\n  \"transaction_id\": \"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\",\n  \"merchant_id\": \"merchant_demo\",\n  \"merchant_name\": \"Demo Corp\",\n  \"amount\": 100.00,\n  \"currency\": \"INR\",\n  \"timestamp\": \"2026-01-10T10:00:00+00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Demonstrates Pydantic validation — returns 422 for an unknown event_type."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "GET /transactions (default)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"]
+            },
+            "description": "List all transactions, most-recently-initiated first (default sort). Default page size 20."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions (filter by merchant + status)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions?merchant_id={{merchantId}}&current_status=settled&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                { "key": "merchant_id", "value": "{{merchantId}}" },
+                { "key": "current_status", "value": "settled" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Filter by merchant and status."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions (date range)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions?start_date=2026-01-08T00:00:00Z&end_date=2026-01-15T23:59:59Z&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                { "key": "start_date", "value": "2026-01-08T00:00:00Z" },
+                { "key": "end_date", "value": "2026-01-15T23:59:59Z" },
+                { "key": "limit", "value": "5" }
+              ]
+            },
+            "description": "Filter transactions by initiated_at date range."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions (sort by amount desc)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions?sort_by=amount&order=desc&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                { "key": "sort_by", "value": "amount" },
+                { "key": "order", "value": "desc" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Highest-value transactions first. Sort fields: initiated_at | updated_at | amount | merchant_id."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions (pagination page 2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions?limit=20&offset=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "offset", "value": "20" }
+              ]
+            },
+            "description": "Second page of 20 items."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{sampleTransactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{sampleTransactionId}}"]
+            },
+            "description": "Fetch a single transaction with full ordered event history. Set the `sampleTransactionId` collection variable to a UUID from your seeded data."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions/{id} (404 case)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "00000000-0000-0000-0000-000000000000"]
+            },
+            "description": "Returns 404 for a non-existent transaction UUID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reconciliation",
+      "item": [
+        {
+          "name": "GET /reconciliation/summary (by merchant — default)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reconciliation/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["reconciliation", "summary"]
+            },
+            "description": "Aggregate transaction counts per merchant. Response includes both the new `groups` shape and the backward-compat `merchants`/`total_merchants` fields."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /reconciliation/summary (by date)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reconciliation/summary?group_by=date",
+              "host": ["{{baseUrl}}"],
+              "path": ["reconciliation", "summary"],
+              "query": [
+                { "key": "group_by", "value": "date" }
+              ]
+            },
+            "description": "One row per UTC calendar day of initiated_at."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /reconciliation/summary (by status)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reconciliation/summary?group_by=status",
+              "host": ["{{baseUrl}}"],
+              "path": ["reconciliation", "summary"],
+              "query": [
+                { "key": "group_by", "value": "status" }
+              ]
+            },
+            "description": "One row per lifecycle state — good for ops dashboards."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /reconciliation/discrepancies (default 24h threshold)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reconciliation/discrepancies",
+              "host": ["{{baseUrl}}"],
+              "path": ["reconciliation", "discrepancies"]
+            },
+            "description": "Full anomaly report: duplicates, missing_initiated, failed-after-settled, settled_without_processed, processed_never_settled, invalid_state_transition."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /reconciliation/discrepancies (flag ALL processed-only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reconciliation/discrepancies?stale_after_hours=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["reconciliation", "discrepancies"],
+              "query": [
+                { "key": "stale_after_hours", "value": "0" }
+              ]
+            },
+            "description": "Threshold=0 flags every transaction stuck in payment_processed regardless of age."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

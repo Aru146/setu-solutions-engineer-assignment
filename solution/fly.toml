@@ -1,0 +1,57 @@
+# Fly.io deployment config for the Payment Reconciliation Service.
+#
+# Prerequisites (one-time):
+#   1. Install flyctl:      https://fly.io/docs/hands-on/install-flyctl/
+#   2. Sign in:             fly auth login
+#   3. Create Postgres:     fly postgres create --name payment-recon-db
+#                             (choose the smallest development plan)
+#   4. Create the app:      fly launch --no-deploy --copy-config
+#                             (accept the app name below or pick your own)
+#   5. Attach the database: fly postgres attach payment-recon-db
+#                             (this automatically sets DATABASE_URL secret)
+#   6. Deploy:              fly deploy
+#
+# The Dockerfile's CMD runs `alembic upgrade head` before starting uvicorn,
+# so schema migrations apply automatically on every deploy.
+#
+# Update `app` below to a name unique on Fly.io.
+
+app = "payment-recon-service"
+primary_region = "bom"   # Mumbai — closest to the assignment's INR merchants
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  LOG_LEVEL = "INFO"
+  # PORT is auto-injected by Fly.io; the Dockerfile picks it up.
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

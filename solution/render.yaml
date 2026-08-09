@@ -1,0 +1,39 @@
+# Render Blueprint for one-click deploy.
+# https://render.com/docs/blueprint-spec
+#
+# Deploying:
+#   1. Sign in to Render, click "New +" → "Blueprint".
+#   2. Point Render at this fork of the repo. It will detect `render.yaml`
+#      and provision both the web service and the managed Postgres database
+#      from the definitions below.
+#   3. Click "Apply". First deploy runs `alembic upgrade head` automatically
+#      via the Dockerfile CMD, so the schema is created on startup.
+#
+# The `fromDatabase` reference wires the Postgres connection string into the
+# web service's DATABASE_URL environment variable — no manual secrets to copy.
+
+databases:
+  - name: payment-recon-db
+    plan: free
+    databaseName: payment_recon
+    user: payment_recon
+
+services:
+  - type: web
+    name: payment-recon-service
+    runtime: docker
+    plan: free
+    region: singapore    # closest free region to INR merchants; change if needed
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: payment-recon-db
+          property: connectionString
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      # Render injects PORT automatically; the Dockerfile CMD honors it.
