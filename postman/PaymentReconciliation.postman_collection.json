@@ -7,9 +7,9 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8000",
+      "value": "https://setu-solutions-engineer-assignment-1.onrender.com",
       "type": "string",
-      "description": "Base URL of the service. Override with your deployed URL, e.g. https://payment-recon.fly.dev"
+      "description": "Base URL of the service."
     },
     {
       "key": "merchantId",
